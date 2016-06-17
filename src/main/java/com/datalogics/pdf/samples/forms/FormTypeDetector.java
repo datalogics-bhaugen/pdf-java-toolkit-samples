@@ -31,6 +31,7 @@ public class FormTypeDetector {
     static HashMap<String, Integer> formTypes = new HashMap<String, Integer>();
     static int numberOfProblemDocuments = 0;
     static int numberOfPasswordProtectedDocuments = 0;
+    static String directoryToSearch = null;
 
     /**
      * @param args
@@ -38,20 +39,24 @@ public class FormTypeDetector {
     public static void main(final String[] args) {
         // must have just the one argument of a directory to search through
         if (args.length != 1) {
+            // Solution taken from Stackoverflow : http://stackoverflow.com/a/7603444/924
+            directoryToSearch = System.getProperty("user.dir");
+            System.out.println("Using " + directoryToSearch + " as the directory to search for PDFs to evaluate");
+        } else if (args.length == 1) {
+            directoryToSearch = args[0];
+        }
 
-        } else {
-            final File directoryToEvaluateFormTypes = new File(args[0]);
-            // check if the path exists and if it is a directory
-            if (directoryToEvaluateFormTypes.exists() && directoryToEvaluateFormTypes.isDirectory()) {
-                // build our hashmap to store the number of different form types we find
-                for (final PDFDocumentType c : PDFDocumentType.values()) {
-                    formTypes.put(c.toString(), 0);
-                }
-
-                searchRecursivelyForPDF(directoryToEvaluateFormTypes);
-
-                printStatisticsOfFiles();
+        final File directoryToEvaluateFormTypes = new File(directoryToSearch);
+        // check if the path exists and if it is a directory
+        if (directoryToEvaluateFormTypes.exists() && directoryToEvaluateFormTypes.isDirectory()) {
+            // build our hashmap to store the number of different form types we find
+            for (final PDFDocumentType c : PDFDocumentType.values()) {
+                formTypes.put(c.toString(), 0);
             }
+
+            searchRecursivelyForPDF(directoryToEvaluateFormTypes);
+
+            printStatisticsOfFiles();
         }
     }
 
