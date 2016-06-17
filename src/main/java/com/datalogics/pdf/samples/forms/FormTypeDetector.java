@@ -8,6 +8,7 @@ import com.adobe.internal.io.InputStreamByteReader;
 import com.adobe.pdfjt.core.exceptions.PDFIOException;
 import com.adobe.pdfjt.core.exceptions.PDFInvalidDocumentException;
 import com.adobe.pdfjt.core.exceptions.PDFSecurityException;
+import com.adobe.pdfjt.core.exceptions.PDFUnableToCompleteOperationException;
 import com.adobe.pdfjt.pdf.document.PDFDocument;
 import com.adobe.pdfjt.pdf.document.PDFDocument.PDFDocumentType;
 import com.adobe.pdfjt.pdf.document.PDFOpenOptions;
@@ -75,11 +76,13 @@ public class FormTypeDetector {
             } else {
                 // if it is a file, then we only want to look at it if it is a PDF
                 if (f.toURI().toString().toLowerCase().endsWith(".pdf")) {
-                    FileInputStream inputStream;
+                    FileInputStream inputStream = null;
+                    InputStreamByteReader byteReader = null;
+                    PDFDocument document = null;
                     try {
                         inputStream = new FileInputStream(f);
-                        final InputStreamByteReader byteReader = new InputStreamByteReader(inputStream);
-                        final PDFDocument document = PDFDocument.newInstance(byteReader, PDFOpenOptions.newInstance());
+                        byteReader = new InputStreamByteReader(inputStream);
+                        document = PDFDocument.newInstance(byteReader, PDFOpenOptions.newInstance());
                         final PDFDocumentType documentType = XFAService.getDocumentType(document);
                         if (documentType != null) {
                             final int count = formTypes.containsKey(documentType.toString())
@@ -116,6 +119,47 @@ public class FormTypeDetector {
                     } catch (final PDFSecurityException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
+                    } finally {
+                        if (document != null) {
+                            try {
+                                document.close();
+                            } catch (final PDFInvalidDocumentException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            } catch (final PDFIOException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            } catch (final PDFSecurityException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            } catch (final PDFUnableToCompleteOperationException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            } finally {
+                                document = null;
+                            }
+                        }
+
+                        if (byteReader != null) {
+                            try {
+                                byteReader.close();
+                            } catch (final IOException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            } finally {
+                                byteReader = null;
+                            }
+                        }
+
+                        if (inputStream != null) {
+                            try {
+                                inputStream.close();
+                            } catch (final IOException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                            inputStream = null;
+                        }
                     }
                 }
             }
