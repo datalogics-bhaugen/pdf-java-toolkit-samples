@@ -71,6 +71,8 @@ public class FormTypeDetector {
     private static void printStatisticsOfFiles() {
         System.out.println("File detection complete!");
 
+        consolidateFormTypes();
+
         final Set<String> keys = formTypes.keySet();
         for (final String s : keys) {
             System.out.println(s + " : " + formTypes.get(s));
@@ -84,6 +86,38 @@ public class FormTypeDetector {
             System.out.println("Could not open " + numberOfPasswordProtectedDocuments
                                + " documents because they are password protected");
         }
+    }
+
+    /**
+     *
+     */
+    private static void consolidateFormTypes() {
+        int dynamicXFA = 0;;
+        int staticXFA = 0;
+
+        if (formTypes.containsKey(PDFDocumentType.DynamicNonShellXFA.toString())) {
+            dynamicXFA += formTypes.get(PDFDocumentType.DynamicNonShellXFA.toString());
+            formTypes.remove(PDFDocumentType.DynamicNonShellXFA.toString());
+        }
+
+        if (formTypes.containsKey(PDFDocumentType.DynamicShellXFA.toString())) {
+            dynamicXFA += formTypes.get(PDFDocumentType.DynamicShellXFA.toString());
+            formTypes.remove(PDFDocumentType.DynamicShellXFA.toString());
+        }
+
+        formTypes.put("Dynamic XFA", dynamicXFA);
+
+        if (formTypes.containsKey(PDFDocumentType.StaticNonShellXFA.toString())) {
+            staticXFA += formTypes.get(PDFDocumentType.StaticNonShellXFA.toString());
+            formTypes.remove(PDFDocumentType.StaticNonShellXFA.toString());
+        }
+
+        if (formTypes.containsKey(PDFDocumentType.StaticShellXFA.toString())) {
+            staticXFA += formTypes.get(PDFDocumentType.StaticShellXFA.toString());
+            formTypes.remove(PDFDocumentType.StaticShellXFA.toString());
+        }
+
+        formTypes.put("Static XFA", staticXFA);
     }
 
     /**
