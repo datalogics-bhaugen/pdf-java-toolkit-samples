@@ -30,6 +30,7 @@ public class FormTypeDetector {
 
     static HashMap<String, Integer> formTypes = new HashMap<String, Integer>();
     static int numberOfProblemDocuments = 0;
+    static int numberOfPasswordProtectedDocuments = 0;
 
     /**
      * @param args
@@ -67,6 +68,11 @@ public class FormTypeDetector {
 
         if (numberOfProblemDocuments != 0) {
             System.out.println("Could not determine form type for " + numberOfProblemDocuments + " documents");
+        }
+
+        if (numberOfPasswordProtectedDocuments != 0) {
+            System.out.println("Could not open " + numberOfPasswordProtectedDocuments
+                               + " documents because they are password protected");
         }
     }
 
@@ -123,8 +129,8 @@ public class FormTypeDetector {
                             // Swallow the exception as there is nothing for the user to do
                             numberOfProblemDocuments += 1;
                         } catch (final PDFSecurityException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            // Swallow the exception as there is nothing for the user to do
+                            numberOfPasswordProtectedDocuments += 1;
                         } finally {
                             if (document != null) {
                                 try {
