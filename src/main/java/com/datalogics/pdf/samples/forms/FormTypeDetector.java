@@ -29,6 +29,7 @@ import java.util.Set;
 public class FormTypeDetector {
 
     static HashMap<String, Integer> formTypes = new HashMap<String, Integer>();
+    static int numberOfProblemDocuments = 0;
 
     /**
      * @param args
@@ -62,6 +63,10 @@ public class FormTypeDetector {
         final Set<String> keys = formTypes.keySet();
         for (final String s : keys) {
             System.out.println(s + " : " + formTypes.get(s));
+        }
+
+        if (numberOfProblemDocuments != 0) {
+            System.out.println("Could not determine form type for " + numberOfProblemDocuments + " documents");
         }
     }
 
@@ -109,14 +114,14 @@ public class FormTypeDetector {
                             // We should never get a file not found exception because we are checking for existence
                             // before doing anything with the file
                         } catch (final IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            // Swallow the exception as there is nothing for the user to do
+                            numberOfProblemDocuments += 1;
                         } catch (final PDFInvalidDocumentException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            // Swallow the exception as there is nothing for the user to do
+                            numberOfProblemDocuments += 1;
                         } catch (final PDFIOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            // Swallow the exception as there is nothing for the user to do
+                            numberOfProblemDocuments += 1;
                         } catch (final PDFSecurityException e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
