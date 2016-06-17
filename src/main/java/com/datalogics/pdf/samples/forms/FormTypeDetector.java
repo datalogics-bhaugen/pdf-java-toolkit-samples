@@ -18,6 +18,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * This sample demonstrates how to detect the type of form that is in a PDF. It will recursively search through the path
@@ -45,7 +46,21 @@ public class FormTypeDetector {
                 }
 
                 searchRecursivelyForPDF(directoryToEvaluateFormTypes);
+
+                printStatisticsOfFiles();
             }
+        }
+    }
+
+    /**
+     *
+     */
+    private static void printStatisticsOfFiles() {
+        System.out.println("File detection complete!");
+
+        final Set<String> keys = formTypes.keySet();
+        for (final String s : keys) {
+            System.out.println(s + " : " + formTypes.get(s));
         }
     }
 
