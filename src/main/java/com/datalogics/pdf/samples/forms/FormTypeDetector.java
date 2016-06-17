@@ -4,6 +4,21 @@
 
 package com.datalogics.pdf.samples.forms;
 
+import com.adobe.internal.io.InputStreamByteReader;
+import com.adobe.pdfjt.core.exceptions.PDFIOException;
+import com.adobe.pdfjt.core.exceptions.PDFInvalidDocumentException;
+import com.adobe.pdfjt.core.exceptions.PDFSecurityException;
+import com.adobe.pdfjt.pdf.document.PDFDocument;
+import com.adobe.pdfjt.pdf.document.PDFDocument.PDFDocumentType;
+import com.adobe.pdfjt.pdf.document.PDFOpenOptions;
+import com.adobe.pdfjt.services.xfa.XFAService;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
+
 /**
  * This sample demonstrates how to detect the type of form that is in a PDF. It will recursively search through the path
  * supplied as an argument, defaulting to the directory where the sample is run from, for all files that are of type
@@ -11,12 +26,84 @@ package com.datalogics.pdf.samples.forms;
  */
 public class FormTypeDetector {
 
+    static HashMap<String, Integer> formTypes = new HashMap<String, Integer>();
+
     /**
      * @param args
      */
     public static void main(final String[] args) {
-        // TODO Auto-generated method stub
+        // must have just the one argument of a directory to search through
+        if (args.length != 1) {
 
+        } else {
+            final File directoryToEvaluateFormTypes = new File(args[0]);
+            // check if the path exists and if it is a directory
+            if (directoryToEvaluateFormTypes.exists() && directoryToEvaluateFormTypes.isDirectory()) {
+                // build our hashmap to store the number of different form types we find
+                for (final PDFDocumentType c : PDFDocumentType.values()) {
+                    formTypes.put(c.toString(), 0);
+                }
+
+                searchRecursivelyForPDF(directoryToEvaluateFormTypes);
+            }
+        }
     }
 
+    /**
+     * @param directoryToEvaluateFormTypes
+     */
+    public static void searchRecursivelyForPDF(final File directoryToEvaluateFormTypes) {
+        for (final File f : directoryToEvaluateFormTypes.listFiles()) {
+            // if it is a directory, search again
+            if (f.isDirectory()) {
+                searchRecursivelyForPDF(f);
+            } else {
+                // if it is a file, then we only want to look at it if it is a PDF
+                if (f.toURI().toString().toLowerCase().endsWith(".pdf")) {
+                    FileInputStream inputStream;
+                    try {
+                        inputStream = new FileInputStream(f);
+                        final InputStreamByteReader byteReader = new InputStreamByteReader(inputStream);
+                        final PDFDocument document = PDFDocument.newInstance(byteReader, PDFOpenOptions.newInstance());
+                        final PDFDocumentType documentType = XFAService.getDocumentType(document);
+                        if (documentType != null) {
+                            final int count = formTypes.containsKey(documentType.toString())
+                                            ? formTypes.get(documentType.toString()) : 0;
+                            formTypes.put(documentType.toString(), count + 1);
+
+                            switch (documentType) {
+                                case Acroform:
+                                    break;
+                                case DynamicNonShellXFA:
+                                    break;
+                                case DynamicShellXFA:
+                                    break;
+                                case Flat:
+                                    break;
+                                case StaticNonShellXFA:
+                                    break;
+                                case StaticShellXFA:
+                                    break;
+                            }
+                        }
+                    } catch (final FileNotFoundException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (final IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (final PDFInvalidDocumentException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (final PDFIOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (final PDFSecurityException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
 }
