@@ -46,17 +46,21 @@ public class FormTypeDetector {
             directoryToSearch = args[0];
         }
 
-        final File directoryToEvaluateFormTypes = new File(directoryToSearch);
-        // check if the path exists and if it is a directory
-        if (directoryToEvaluateFormTypes.exists() && directoryToEvaluateFormTypes.isDirectory()) {
-            // build our hashmap to store the number of different form types we find
-            for (final PDFDocumentType c : PDFDocumentType.values()) {
-                formTypes.put(c.toString(), 0);
+        try {
+            final File directoryToEvaluateFormTypes = new File(directoryToSearch);
+            // check if the path exists and if it is a directory
+            if (directoryToEvaluateFormTypes.exists() && directoryToEvaluateFormTypes.isDirectory()) {
+                // build our hashmap to store the number of different form types we find
+                for (final PDFDocumentType c : PDFDocumentType.values()) {
+                    formTypes.put(c.toString(), 0);
+                }
+
+                searchRecursivelyForPDF(directoryToEvaluateFormTypes);
+
+                printStatisticsOfFiles();
             }
-
-            searchRecursivelyForPDF(directoryToEvaluateFormTypes);
-
-            printStatisticsOfFiles();
+        } catch (final OutOfMemoryError e) {
+            System.out.println("Too many files to look through, specify a directory with fewer files/directories");
         }
     }
 
