@@ -4,7 +4,7 @@
 
 package com.datalogics.pdf.samples.forms;
 
-import com.adobe.internal.io.InputStreamByteReader;
+import com.adobe.internal.io.RandomAccessFileByteReader;
 import com.adobe.pdfjt.core.exceptions.PDFIOException;
 import com.adobe.pdfjt.core.exceptions.PDFInvalidDocumentException;
 import com.adobe.pdfjt.core.exceptions.PDFSecurityException;
@@ -15,9 +15,9 @@ import com.adobe.pdfjt.pdf.document.PDFOpenOptions;
 import com.adobe.pdfjt.services.xfa.XFAService;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -97,12 +97,12 @@ public class FormTypeDetector {
                 } else {
                     // if it is a file, then we only want to look at it if it is a PDF
                     if (f.toURI().toString().toLowerCase().endsWith(".pdf")) {
-                        FileInputStream inputStream = null;
-                        InputStreamByteReader byteReader = null;
+                        RandomAccessFile inputStream = null;
+                        RandomAccessFileByteReader byteReader = null;
                         PDFDocument document = null;
                         try {
-                            inputStream = new FileInputStream(f);
-                            byteReader = new InputStreamByteReader(inputStream);
+                            inputStream = new RandomAccessFile(f, "r");
+                            byteReader = new RandomAccessFileByteReader(inputStream);
                             document = PDFDocument.newInstance(byteReader, PDFOpenOptions.newInstance());
                             final PDFDocumentType documentType = XFAService.getDocumentType(document);
                             if (documentType != null) {
@@ -140,6 +140,8 @@ public class FormTypeDetector {
                         } catch (final PDFSecurityException e) {
                             // Swallow the exception as there is nothing for the user to do
                             numberOfPasswordProtectedDocuments += 1;
+                        } catch (final java.util.NoSuchElementException e) {
+                            numberOfProblemDocuments += 1;
                         } finally {
                             if (document != null) {
                                 try {
