@@ -5,6 +5,7 @@
 package com.datalogics.pdf.samples.forms;
 
 import com.adobe.internal.io.RandomAccessFileByteReader;
+import com.adobe.pdfjt.core.exceptions.PDFCosNumberParseRuntimeException;
 import com.adobe.pdfjt.core.exceptions.PDFIOException;
 import com.adobe.pdfjt.core.exceptions.PDFInvalidDocumentException;
 import com.adobe.pdfjt.core.exceptions.PDFSecurityException;
@@ -141,6 +142,8 @@ public class FormTypeDetector {
                             // Swallow the exception as there is nothing for the user to do
                             numberOfPasswordProtectedDocuments += 1;
                         } catch (final java.util.NoSuchElementException e) {
+                            numberOfProblemDocuments += 1;
+                        } catch (final PDFCosNumberParseRuntimeException e) {
                             numberOfProblemDocuments += 1;
                         } finally {
                             if (document != null) {
