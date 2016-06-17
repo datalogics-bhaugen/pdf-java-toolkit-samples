@@ -90,101 +90,104 @@ public class FormTypeDetector {
      * @param directoryToEvaluateFormTypes
      */
     public static void searchRecursivelyForPDF(final File directoryToEvaluateFormTypes) {
-        for (final File f : directoryToEvaluateFormTypes.listFiles()) {
-            if (f.exists()) {
-                // if it is a directory, search again
-                if (f.isDirectory()) {
-                    searchRecursivelyForPDF(f);
-                } else {
-                    // if it is a file, then we only want to look at it if it is a PDF
-                    if (f.toURI().toString().toLowerCase().endsWith(".pdf")) {
-                        RandomAccessFile inputStream = null;
-                        RandomAccessFileByteReader byteReader = null;
-                        PDFDocument document = null;
-                        try {
-                            inputStream = new RandomAccessFile(f, "r");
-                            byteReader = new RandomAccessFileByteReader(inputStream);
-                            document = PDFDocument.newInstance(byteReader, PDFOpenOptions.newInstance());
-                            final PDFDocumentType documentType = XFAService.getDocumentType(document);
-                            if (documentType != null) {
-                                final int count = formTypes.containsKey(documentType.toString())
-                                                ? formTypes.get(documentType.toString()) : 0;
-                                formTypes.put(documentType.toString(), count + 1);
+        final File[] filesInDirectory = directoryToEvaluateFormTypes.listFiles();
+        if (filesInDirectory != null && filesInDirectory.length > 0) {
+            for (final File f : filesInDirectory) {
+                if (f.exists()) {
+                    // if it is a directory, search again
+                    if (f.isDirectory()) {
+                        searchRecursivelyForPDF(f);
+                    } else {
+                        // if it is a file, then we only want to look at it if it is a PDF
+                        if (f.toURI().toString().toLowerCase().endsWith(".pdf")) {
+                            RandomAccessFile inputStream = null;
+                            RandomAccessFileByteReader byteReader = null;
+                            PDFDocument document = null;
+                            try {
+                                inputStream = new RandomAccessFile(f, "r");
+                                byteReader = new RandomAccessFileByteReader(inputStream);
+                                document = PDFDocument.newInstance(byteReader, PDFOpenOptions.newInstance());
+                                final PDFDocumentType documentType = XFAService.getDocumentType(document);
+                                if (documentType != null) {
+                                    final int count = formTypes.containsKey(documentType.toString())
+                                                    ? formTypes.get(documentType.toString()) : 0;
+                                    formTypes.put(documentType.toString(), count + 1);
 
-                                switch (documentType) {
-                                    case Acroform:
-                                        break;
-                                    case DynamicNonShellXFA:
-                                        break;
-                                    case DynamicShellXFA:
-                                        break;
-                                    case Flat:
-                                        break;
-                                    case StaticNonShellXFA:
-                                        break;
-                                    case StaticShellXFA:
-                                        break;
+                                    switch (documentType) {
+                                        case Acroform:
+                                            break;
+                                        case DynamicNonShellXFA:
+                                            break;
+                                        case DynamicShellXFA:
+                                            break;
+                                        case Flat:
+                                            break;
+                                        case StaticNonShellXFA:
+                                            break;
+                                        case StaticShellXFA:
+                                            break;
+                                    }
                                 }
-                            }
-                        } catch (final FileNotFoundException e) {
-                            // We should never get a file not found exception because we are checking for existence
-                            // before doing anything with the file
-                        } catch (final IOException e) {
-                            // Swallow the exception as there is nothing for the user to do
-                            numberOfProblemDocuments += 1;
-                        } catch (final PDFInvalidDocumentException e) {
-                            // Swallow the exception as there is nothing for the user to do
-                            numberOfProblemDocuments += 1;
-                        } catch (final PDFIOException e) {
-                            // Swallow the exception as there is nothing for the user to do
-                            numberOfProblemDocuments += 1;
-                        } catch (final PDFSecurityException e) {
-                            // Swallow the exception as there is nothing for the user to do
-                            numberOfPasswordProtectedDocuments += 1;
-                        } catch (final java.util.NoSuchElementException e) {
-                            numberOfProblemDocuments += 1;
-                        } catch (final PDFCosNumberParseRuntimeException e) {
-                            numberOfProblemDocuments += 1;
-                        } finally {
-                            if (document != null) {
-                                try {
-                                    document.close();
-                                } catch (final PDFInvalidDocumentException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                } catch (final PDFIOException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                } catch (final PDFSecurityException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                } catch (final PDFUnableToCompleteOperationException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                } finally {
-                                    document = null;
+                            } catch (final FileNotFoundException e) {
+                                // We should never get a file not found exception because we are checking for existence
+                                // before doing anything with the file
+                            } catch (final IOException e) {
+                                // Swallow the exception as there is nothing for the user to do
+                                numberOfProblemDocuments += 1;
+                            } catch (final PDFInvalidDocumentException e) {
+                                // Swallow the exception as there is nothing for the user to do
+                                numberOfProblemDocuments += 1;
+                            } catch (final PDFIOException e) {
+                                // Swallow the exception as there is nothing for the user to do
+                                numberOfProblemDocuments += 1;
+                            } catch (final PDFSecurityException e) {
+                                // Swallow the exception as there is nothing for the user to do
+                                numberOfPasswordProtectedDocuments += 1;
+                            } catch (final java.util.NoSuchElementException e) {
+                                numberOfProblemDocuments += 1;
+                            } catch (final PDFCosNumberParseRuntimeException e) {
+                                numberOfProblemDocuments += 1;
+                            } finally {
+                                if (document != null) {
+                                    try {
+                                        document.close();
+                                    } catch (final PDFInvalidDocumentException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    } catch (final PDFIOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    } catch (final PDFSecurityException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    } catch (final PDFUnableToCompleteOperationException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    } finally {
+                                        document = null;
+                                    }
                                 }
-                            }
 
-                            if (byteReader != null) {
-                                try {
-                                    byteReader.close();
-                                } catch (final IOException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                } finally {
-                                    byteReader = null;
+                                if (byteReader != null) {
+                                    try {
+                                        byteReader.close();
+                                    } catch (final IOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    } finally {
+                                        byteReader = null;
+                                    }
                                 }
-                            }
 
-                            if (inputStream != null) {
-                                try {
-                                    inputStream.close();
-                                } catch (final IOException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
+                                if (inputStream != null) {
+                                    try {
+                                        inputStream.close();
+                                    } catch (final IOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+                                    inputStream = null;
                                 }
-                                inputStream = null;
                             }
                         }
                     }
