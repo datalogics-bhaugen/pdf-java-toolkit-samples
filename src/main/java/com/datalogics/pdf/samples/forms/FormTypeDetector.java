@@ -174,6 +174,10 @@ public class FormTypeDetector {
                             } catch (final PDFIOException e) {
                                 // Swallow the exception as there is nothing for the user to do
                                 numberOfProblemDocuments += 1;
+                                if (e.getCause().getMessage().contains("License")) {
+                                    System.out.println("Cannot find license for PDF Java Toolkit");
+                                    System.exit(0);
+                                }
                             } catch (final PDFSecurityException e) {
                                 // Swallow the exception as there is nothing for the user to do
                                 numberOfPasswordProtectedDocuments += 1;
