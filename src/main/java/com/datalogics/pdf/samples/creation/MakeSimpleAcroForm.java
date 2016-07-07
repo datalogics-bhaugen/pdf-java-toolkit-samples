@@ -5,8 +5,6 @@
 package com.datalogics.pdf.samples.creation;
 
 import com.adobe.internal.io.RandomAccessFileByteWriter;
-import com.adobe.pdfjt.core.exceptions.PDFConfigurationException;
-import com.adobe.pdfjt.core.exceptions.PDFFontException;
 import com.adobe.pdfjt.core.exceptions.PDFIOException;
 import com.adobe.pdfjt.core.exceptions.PDFInvalidDocumentException;
 import com.adobe.pdfjt.core.exceptions.PDFInvalidParameterException;
@@ -17,13 +15,10 @@ import com.adobe.pdfjt.pdf.document.PDFDocument;
 import com.adobe.pdfjt.pdf.document.PDFOpenOptions;
 import com.adobe.pdfjt.pdf.document.PDFSaveFullOptions;
 import com.adobe.pdfjt.pdf.graphics.PDFRectangle;
-import com.adobe.pdfjt.pdf.interactive.annotation.PDFAnnotationList;
-import com.adobe.pdfjt.pdf.interactive.annotation.PDFAnnotationWidget;
-import com.adobe.pdfjt.pdf.interactive.forms.PDFFieldText;
-import com.adobe.pdfjt.pdf.interactive.forms.PDFInteractiveForm;
 import com.adobe.pdfjt.pdf.page.PDFPage;
 import com.adobe.pdfjt.pdf.page.PDFPageTree;
-import com.adobe.pdfjt.services.ap.AppearanceService;
+import com.adobe.pdfjt.services.forms.FormFieldManager;
+import com.adobe.pdfjt.services.forms.FormFieldService;
 
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
@@ -44,32 +39,11 @@ public class MakeSimpleAcroForm {
                                                                                                PDFRectangle.newInstance(document,
                                                                                                                         ASRectangle.US_LEGAL)));
 
-            final PDFInteractiveForm form = PDFInteractiveForm.newInstance(document, null);
+            final FormFieldManager formFieldManager = FormFieldService.getAcroFormFieldManager(document);
 
-            final PDFAnnotationWidget firstNameWidget = PDFAnnotationWidget.newInstance(pageTree.getPage(0),
-                                                                                        PDFRectangle.newInstance(document,
-                                                                                                                 new ASRectangle(100,
-                                                                                                                                 100,
-                                                                                                                                 100,
-                                                                                                                                 100)));
-            final PDFFieldText firstNameNode = PDFFieldText.newInstance("First Name", pageTree.getPage(0),
-                                                                        PDFRectangle.newInstance(document,
-                                                                                                 new ASRectangle(100,
-                                                                                                                 100,
-                                                                                                                 100,
-                                                                                                                 100)),
-                                                                        null,
-                                                                        false);
-            firstNameWidget.setParentField(firstNameNode);
-            final PDFAnnotationList firstNameNodeAnnotationList = PDFAnnotationList.newInstance(document);
-            firstNameNodeAnnotationList.add(firstNameWidget);
-            firstNameNode.setAnnotations(firstNameNodeAnnotationList);
-
-            form.addChild(firstNameNode);
-
-            document.setInteractiveForm(form);
-
-            AppearanceService.generateAppearances(document, null, null);
+            formFieldManager.addTextField("First Name", "First Name",
+                                          PDFRectangle.newInstance(document, new ASRectangle(100, 100, 200, 200)),
+                                          pageTree.getPage(0), null);
 
             final RandomAccessFile file = new RandomAccessFile("/Users/bhaugen/Desktop/acroform.pdf", "rw");
             final RandomAccessFileByteWriter byteWriter = new RandomAccessFileByteWriter(file);
@@ -92,13 +66,6 @@ public class MakeSimpleAcroForm {
         } catch (final PDFUnableToCompleteOperationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (final PDFFontException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (final PDFConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
-
 }
