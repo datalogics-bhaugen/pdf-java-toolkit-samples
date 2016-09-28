@@ -11,6 +11,7 @@ import com.adobe.pdfjt.core.exceptions.PDFInvalidParameterException;
 import com.adobe.pdfjt.core.exceptions.PDFSecurityException;
 import com.adobe.pdfjt.core.license.LicenseManager;
 import com.adobe.pdfjt.pdf.document.PDFDocument;
+import com.adobe.pdfjt.pdf.graphics.PDFRotation;
 import com.adobe.pdfjt.pdf.page.PDFPage;
 import com.adobe.pdfjt.services.rasterizer.PageRasterizer;
 import com.adobe.pdfjt.services.rasterizer.RasterizationOptions;
@@ -29,11 +30,13 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterIOException;
 import java.awt.print.PrinterJob;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.standard.PrinterResolution;
@@ -102,6 +105,10 @@ public class PrintPdf {
             // the document are the same size.
             final PDFDocument pdfDocument = DocumentUtils.openPdfDocument(inputUrl);
             final PDFPage pdfPage = pdfDocument.requirePages().getPage(0);
+
+            // rotate the first page 90 degrees
+            pdfPage.setRotation(PDFRotation.ROTATE_90);
+
             final int pdfPageWidth = (int) pdfPage.getMediaBox().width();
             final int pdfPageHeight = (int) pdfPage.getMediaBox().height();
 
@@ -194,6 +201,10 @@ public class PrintPdf {
                 if (previousPageIndex < pageIndex) {
                     if (pageRasterizer.hasNext()) {
                         page = pageRasterizer.next();
+
+                        // write the rasterized page out to a PNG for review
+                        final File outputfile = new File("saved.png");
+                        ImageIO.write(page, "png", outputfile);
                     } else {
                         // There are no more pages in this document.
                         previousPageIndex = -1;
@@ -211,6 +222,9 @@ public class PrintPdf {
                 }
                 // This double-wrap allows us to throw the rasterizer exception to the PrinterJob.
                 throw new PrinterIOException(new IOException("Error rasterizing a page", e));
+            } catch (final IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
 
             // Draw the rasterized page into the specified Graphics context.
