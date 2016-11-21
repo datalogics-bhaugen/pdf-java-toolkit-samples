@@ -12,6 +12,7 @@ import com.adobe.pdfjt.core.exceptions.PDFUnableToCompleteOperationException;
 import com.adobe.pdfjt.core.fontset.PDFFontSet;
 import com.adobe.pdfjt.core.license.LicenseManager;
 import com.adobe.pdfjt.pdf.document.PDFDocument;
+import com.adobe.pdfjt.services.readingorder.LayoutModeTextExtractor;
 import com.adobe.pdfjt.services.readingorder.ReadingOrderTextExtractor;
 import com.adobe.pdfjt.services.textextraction.Word;
 import com.adobe.pdfjt.services.textextraction.WordsIterator;
@@ -38,7 +39,8 @@ public final class TextExtract {
     private static final Logger LOGGER = Logger.getLogger(TextExtract.class.getName());
 
     public static final String INPUT_PDF_PATH = "/com/datalogics/pdf/samples/pdfjavatoolkit-ds.pdf";
-    public static final String OUTPUT_TEXT_PATH = "TextExtract.txt";
+    public static final String OUTPUT_READING_ORDER_TEXT_PATH = "ReadingOrderTextExtract.txt";
+    public static final String OUTPUT_LAYOUT_MODE_TEXT_PATH = "LayoutModeTextExtract.txt";
 
     /**
      * This is a utility class, and won't be instantiated.
@@ -58,17 +60,21 @@ public final class TextExtract {
         // If you are not using an evaluation version of the product you can ignore or remove this code.
         LicenseManager.setLicensePath(".");
         URL inputUrl = null;
-        URL outputUrl = null;
+        URL readingOrderOutputUrl = null;
+        URL layoutModeOutputUrl = null;
 
-        if (args.length > 1) {
+        if (args.length > 2) {
             inputUrl = IoUtils.createUrlFromPath(args[0]);
-            outputUrl = IoUtils.createUrlFromPath(args[1]);
+            readingOrderOutputUrl = IoUtils.createUrlFromPath(args[1]);
+            layoutModeOutputUrl = IoUtils.createUrlFromPath(args[2]);
         } else {
             inputUrl = TextExtract.class.getResource(INPUT_PDF_PATH);
-            outputUrl = IoUtils.createUrlFromPath(OUTPUT_TEXT_PATH);
+            readingOrderOutputUrl = IoUtils.createUrlFromPath(OUTPUT_READING_ORDER_TEXT_PATH);
+            layoutModeOutputUrl = IoUtils.createUrlFromPath(OUTPUT_LAYOUT_MODE_TEXT_PATH);
         }
 
-        extractTextReadingOrder(inputUrl, outputUrl);
+        extractTextReadingOrder(inputUrl, readingOrderOutputUrl);
+        extractTextLayoutOrder(inputUrl, layoutModeOutputUrl);
     }
 
     /**
@@ -95,6 +101,52 @@ public final class TextExtract {
 
             final PDFFontSet docFontSet = FontUtils.getDocFontSet(document);
             final ReadingOrderTextExtractor extractor = ReadingOrderTextExtractor.newInstance(document, docFontSet);
+            final WordsIterator wordsIter = extractor.getWordsIterator();
+
+            if (wordsIter.hasNext()) {
+                try (final FileOutputStream outputStream = obtainOutputStream(outputUrl)) {
+                    do {
+                        final Word word = wordsIter.next();
+                        outputStream.write(word.toString().getBytes("UTF-8"));
+                    } while (wordsIter.hasNext());
+                }
+            } else {
+                if (LOGGER.isLoggable(Level.INFO)) {
+                    LOGGER.info(inputUrl.toURI().getPath() + " did not have any text to extract.");
+                }
+            }
+
+        } finally {
+            if (document != null) {
+                document.close();
+            }
+        }
+    }
+
+    /**
+     * Extracts the text from a PDF file in layout order.
+     *
+     * @param inputUrl An URL for the input document, to extract text from
+     * @param outputUrl An URL for the file stream where the extracted text will be written
+     * @throws PDFInvalidDocumentException a general problem with the PDF document, which may now be in an invalid state
+     * @throws PDFIOException there was an error reading or writing a PDF file or temporary caches
+     * @throws PDFFontException there was an error in the font set or an individual font
+     * @throws PDFSecurityException some general security issue occurred during the processing of the request
+     * @throws UnsupportedEncodingException the character encoding is not supported
+     * @throws IOException an I/O operation failed or was interrupted
+     * @throws PDFUnableToCompleteOperationException the operation was unable to be completed
+     * @throws URISyntaxException the input URL could not be converted to a string
+     */
+    public static void extractTextLayoutOrder(final URL inputUrl, final URL outputUrl)
+                    throws PDFInvalidDocumentException, PDFIOException, PDFFontException, PDFSecurityException,
+                    UnsupportedEncodingException, IOException, PDFUnableToCompleteOperationException,
+                    URISyntaxException {
+        PDFDocument document = null;
+        try {
+            document = DocumentUtils.openPdfDocument(inputUrl);
+
+            final PDFFontSet docFontSet = FontUtils.getDocFontSet(document);
+            final LayoutModeTextExtractor extractor = LayoutModeTextExtractor.newInstance(document, docFontSet);
             final WordsIterator wordsIter = extractor.getWordsIterator();
 
             if (wordsIter.hasNext()) {
