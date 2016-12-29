@@ -146,7 +146,7 @@ public final class MakeWhiteFangBook {
     private static void addBookText(final PDFDocument pdfDoc) throws Exception {
         // Read in a text and add each line as separate paragraph
         try (LayoutEngine layoutEngine = new LayoutEngine(pdfDoc);
-             InputStream is = MakeWhiteFangBook.class.getResourceAsStream("WhiteFang.chapter1.txt");
+             InputStream is = MakeWhiteFangBook.class.getResourceAsStream("patrick_test.txt");
              InputStreamReader isr = new InputStreamReader(is, "UTF-8");
              BufferedReader br = new BufferedReader(isr)) {
             for (String line; (line = br.readLine()) != null;) {
