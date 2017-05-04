@@ -54,10 +54,10 @@ import java.util.logging.Logger;
 /**
  * This sample demonstrates how to open a document, add redaction annotations to it, and then apply the redaction. The
  * document is then sanitized.
- * 
+ *
  * <p>
  * Redaction is commonly used to remove or deliberately obscure sensitive or classified information when a document is
- * released to the public.  
+ * released to the public.
  *
  * <p>
  * Redaction and sanitization is done in three steps. Redaction annotations are first added to the document. Those
@@ -217,7 +217,7 @@ public final class RedactAndSanitizeDocument {
                 addRedactionAnnotationToWord(document, word, currentPage);
             }
         }
-        generateAnnotationAppearances(document, docFontSet);
+        // generateAnnotationAppearances(document, docFontSet);
 
         // Redaction Annotations are a PDF v1.7 feature.
         if (document.getOriginalVersion().lessThan(PDFVersion.v1_7)) {
@@ -246,7 +246,6 @@ public final class RedactAndSanitizeDocument {
         annot.setQuads(word.getBoundingQuads());
         annot.setRect(annot.getRedactionAreaBBox());
         annot.setColor(COLOR);
-        annot.setInteriorColor(INTERIOR_COLOR);
 
         // Set the Annotation's creation and modification date.
         final ASDate now = new ASDate();
