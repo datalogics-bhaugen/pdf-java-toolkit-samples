@@ -15,6 +15,7 @@ import com.adobe.pdfjt.pdf.interactive.forms.PDFInteractiveForm;
 
 import com.datalogics.pdf.samples.util.DocumentUtils;
 import com.datalogics.pdf.samples.util.IoUtils;
+import com.datalogics.pdf.samples.util.VersionUtils;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -155,8 +156,7 @@ public final class ExportFormDataToCsv {
         while (fieldIterator.hasNext()) {
             final PDFField field = fieldIterator.next();
 
-            final String formattedValue = field.getFormattedValue();
-            if (formattedValue == null) {
+            if (VersionUtils.pdfjtIsBeforeVersion4()) {
                 final List value = field.getValueList();
                 if (value == null) {
                     printer.print("");
@@ -174,7 +174,27 @@ public final class ExportFormDataToCsv {
                     }
                 }
             } else {
-                printer.print(formattedValue);
+                final String formattedValue = field.getFormattedValue();
+                if (formattedValue == null) {
+                    final List value = field.getValueList();
+                    if (value == null) {
+                        printer.print("");
+                        if (LOGGER.isLoggable(Level.WARNING)) {
+                            LOGGER.warning(field.getQualifiedName() + " has no value!");
+                        }
+                    } else {
+                        // If the list of values is not empty, write out only the first one.
+                        // For more complex forms, the field type should be inspected to
+                        // determine how to handle extracting the values.
+                        printer.print(value.get(0).toString());
+                        if (LOGGER.isLoggable(Level.WARNING)) {
+                            LOGGER.warning(field.getQualifiedName()
+                                           + " has no formatting rules! Writing out non formatted value!");
+                        }
+                    }
+                } else {
+                    printer.print(formattedValue);
+                }
             }
         }
     }
