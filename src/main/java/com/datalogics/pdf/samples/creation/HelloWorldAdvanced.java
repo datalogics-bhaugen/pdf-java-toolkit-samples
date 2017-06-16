@@ -7,6 +7,7 @@ package com.datalogics.pdf.samples.creation;
 import com.adobe.internal.io.ByteWriter;
 import com.adobe.internal.io.RandomAccessFileByteWriter;
 import com.adobe.pdfjt.core.exceptions.PDFException;
+import com.adobe.pdfjt.core.fontset.PDFFontSet;
 import com.adobe.pdfjt.core.types.ASName;
 import com.adobe.pdfjt.core.types.ASRectangle;
 import com.adobe.pdfjt.core.types.ASString;
@@ -29,6 +30,8 @@ import com.adobe.pdfjt.pdf.page.PDFPage;
 import com.adobe.pdfjt.pdf.page.PDFPageLayout;
 import com.adobe.pdfjt.pdf.page.PDFPageMode;
 import com.adobe.pdfjt.pdf.page.PDFPageTree;
+
+import com.datalogics.pdf.document.FontSetLoader;
 
 import java.awt.Color;
 import java.io.File;
@@ -61,7 +64,12 @@ public class HelloWorldAdvanced {
 
 			final double[] rectangle = {0, 0, PAGE_WIDTH, PAGE_HEIGHT};
 			final ASRectangle rect = new ASRectangle(rectangle);
-			final PDFDocument pdfDocument = PDFDocument.newInstance(rect, PDFOpenOptions.newInstance());
+            // TODO replace use of Talkeetna's FontSetLoader with one from PDF Java Toolkit Core that has correct
+            // priority ordering of font resolution
+            final PDFFontSet fontSet = FontSetLoader.newInstance().getFontSet();
+            final PDFOpenOptions openOptions = PDFOpenOptions.newInstance();
+            openOptions.setFontSet(fontSet);
+            final PDFDocument pdfDocument = PDFDocument.newInstance(rect, PDFOpenOptions.newInstance());
 
 			/*
 			   The root of a document’s object hierarchy is the catalog
@@ -144,11 +152,12 @@ public class HelloWorldAdvanced {
 			final PDFResources pdfResources = PDFResources.newInstance(pdfPage.getPDFDocument());
 			//PDFFontSimple abstracts functionality common to the simple font dictionaries
 			final PDFFont helveticaBold = PDFFontSimple.newInstance(
-					pdfPage.getPDFDocument(), ASName.k_Helvetica_Bold, ASName.k_Type1);
+                                                                    pdfPage.getPDFDocument(), ASName.k_Helvetica_Bold,
+                                                                    ASName.k_Type1);
 			final PDFFontMap pdfFontMap = PDFFontMap.newInstance(pdfPage.getPDFDocument());
 			pdfFontMap.set(ASName.create("Helvetica-Bold"), helveticaBold);
 			pdfResources.setFontMap(pdfFontMap);
-			pdfResources.setProcSetList(new ASName[] {ASName.k_PDF,ASName.k_Text});
+            pdfResources.setProcSetList(new ASName[] { ASName.k_PDF, ASName.k_Text });
 			pdfPage.setResources(pdfResources);
 
 			/*
@@ -166,7 +175,7 @@ public class HelloWorldAdvanced {
 			   create that instruction ahead of time.
 			 */
 
-			final Instruction showHelloWorld = InstructionFactory.newShowText(new ASString("Hello World"));
+            final Instruction showHelloWorld = InstructionFactory.newShowText(new ASString("Hello World śćłóęą"));
 			final Instruction nextLine = InstructionFactory.newTextNextLine();
 			//A new text block
 			contentWriter.write(InstructionFactory.newBeginText());
