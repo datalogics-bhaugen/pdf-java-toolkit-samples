@@ -2,9 +2,8 @@
  * Copyright 2015 Datalogics, Inc.
  */
 
-import java.awt.Color;
-import java.io.File;
-import java.io.RandomAccessFile;
+package com.datalogics.pdf.samples.creation;
+
 import com.adobe.internal.io.ByteWriter;
 import com.adobe.internal.io.RandomAccessFileByteWriter;
 import com.adobe.pdfjt.core.exceptions.PDFException;
@@ -30,6 +29,10 @@ import com.adobe.pdfjt.pdf.page.PDFPage;
 import com.adobe.pdfjt.pdf.page.PDFPageLayout;
 import com.adobe.pdfjt.pdf.page.PDFPageMode;
 import com.adobe.pdfjt.pdf.page.PDFPageTree;
+
+import java.awt.Color;
+import java.io.File;
+import java.io.RandomAccessFile;
 
 /*
    Demonstrates creating a new document and placing text.
