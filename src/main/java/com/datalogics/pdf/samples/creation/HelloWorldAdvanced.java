@@ -1,14 +1,5 @@
 /*
- 
- Copyright 2009-2012 Adobe Systems Incorporated. All Rights Reserved.
- Portions Copyright 2012 Datalogics Incorporated.
- 
- NOTICE: Datalogics and Adobe permit you to use, modify, and distribute
- this file in accordance with the terms of the license agreement
- accompanying it. If you have received this file from a source other
- than Adobe or Datalogics, then your use, modification, or distribution of it
- requires the prior written permission of Adobe or Datalogics.
-
+ * Copyright 2015 Datalogics, Inc.
  */
 
 import java.awt.Color;
