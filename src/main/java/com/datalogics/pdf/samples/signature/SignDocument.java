@@ -5,32 +5,40 @@
 package com.datalogics.pdf.samples.signature;
 
 import com.adobe.internal.io.ByteWriter;
-import com.adobe.pdfjt.core.credentials.CredentialFactory;
 import com.adobe.pdfjt.core.credentials.Credentials;
-import com.adobe.pdfjt.core.credentials.PrivateKeyHolder;
-import com.adobe.pdfjt.core.credentials.PrivateKeyHolderFactory;
 import com.adobe.pdfjt.core.exceptions.PDFException;
 import com.adobe.pdfjt.core.exceptions.PDFIOException;
 import com.adobe.pdfjt.core.fontset.PDFFontSet;
 import com.adobe.pdfjt.core.license.LicenseManager;
+import com.adobe.pdfjt.core.securityframework.CryptoMode;
 import com.adobe.pdfjt.core.types.ASMatrix;
 import com.adobe.pdfjt.core.types.ASRectangle;
 import com.adobe.pdfjt.pdf.document.PDFDocument;
 import com.adobe.pdfjt.pdf.document.PDFOpenOptions;
+import com.adobe.pdfjt.pdf.document.PDFSaveFullOptions;
+import com.adobe.pdfjt.pdf.document.PDFVersion;
 import com.adobe.pdfjt.pdf.graphics.PDFExtGState;
+import com.adobe.pdfjt.pdf.graphics.PDFRectangle;
 import com.adobe.pdfjt.pdf.graphics.xobject.PDFXObjectImage;
 import com.adobe.pdfjt.pdf.page.PDFPage;
 import com.adobe.pdfjt.services.digsig.SignatureAppearanceDisplayItemsSet;
 import com.adobe.pdfjt.services.digsig.SignatureAppearanceOptions;
+import com.adobe.pdfjt.services.digsig.SignatureFieldFactory;
 import com.adobe.pdfjt.services.digsig.SignatureFieldInterface;
 import com.adobe.pdfjt.services.digsig.SignatureManager;
 import com.adobe.pdfjt.services.digsig.SignatureOptions;
+import com.adobe.pdfjt.services.digsig.SignatureOptionsDocumentTimeStamp;
 import com.adobe.pdfjt.services.digsig.UserInfo;
+import com.adobe.pdfjt.services.digsig.cryptoprovider.CertJNonFIPSProvider;
+import com.adobe.pdfjt.services.digsig.spi.CryptoContext;
+import com.adobe.pdfjt.services.digsig.spi.SignatureServiceProvider;
+import com.adobe.pdfjt.services.digsig.spi.TimeStampProvider;
 import com.adobe.pdfjt.services.imageconversion.ImageManager;
 
 import com.datalogics.pdf.document.FontSetLoader;
 import com.datalogics.pdf.samples.util.DocumentUtils;
 import com.datalogics.pdf.samples.util.IoUtils;
+import com.datalogics.pdf.samples.util.SampleCredentialGenerator;
 
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.NodeList;
@@ -50,43 +58,36 @@ import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 /**
  * This is a sample that demonstrates how to find a specific signature field in a document so that API users can sign
- * the correct field. This sample signs the document using a certificate and key drawn from the key and certificate 
- * files pdfjt-key.der and pdfjt-cert.der. 
- * 
+ * the correct field. This sample signs the document using a certificate and key drawn from the key and certificate
+ * files pdfjt-key.der and pdfjt-cert.der.
+ *
  * <p>
  * Note that these certificates were created by Datalogics for use in testing digital signatures with PDF Java Toolkit.
  * They are self-signed by Datalogics, and so this sample certificate is not backed by a certifying authority (CA).
  * The certificate is intended for a test environment. If you open the output PDF document created using this sample
  * in Adobe Acrobat, you will see an error message in the PDF document itself, stating that the validity of a signature
- * in the document is unknown.  The identity of the signer is not included in the local list of trusted certificates. 
+ * in the document is unknown.  The identity of the signer is not included in the local list of trusted certificates.
  */
 
 public final class SignDocument {
     private static final Logger LOGGER = Logger.getLogger(SignDocument.class.getName());
 
 
-    private static final String DER_KEY_PATH = "pdfjt-key.der";
-    private static final String DER_CERT_PATH = "pdfjt-cert.der";
-    public static final String INPUT_UNSIGNED_PDF_PATH = "UnsignedDocument.pdf";
+    // private static final String DER_KEY_PATH = "pdfjt-key.der";
+    // private static final String DER_CERT_PATH = "pdfjt-cert.der";
+    // public static final String INPUT_UNSIGNED_PDF_PATH = "UnsignedDocument.pdf";
     public static final String INPUT_SIGNATURE_IMAGE_PATH = "Signature.jpg";
     public static final String OUTPUT_SIGNED_PDF_PATH = "SignedField.pdf";
 
+    private static final String DER_KEY_PATH = "PiotrP.pfx";
+    private static final String DER_CERT_PATH = "PiotrP_cert.cer";
+    public static final String INPUT_UNSIGNED_PDF_PATH = "UnsignedDocument.pdf";
+    // public static final String INPUT_UNSIGNED_PDF_PATH = "B_20131003133345_100000000.pdf";
+
+    static final int inches = 72;
+
     private static final Double MM_PER_INCH = 25.4; // millimeters per inch
     private static final Double DEFAULT_MM_PER_PIXEL = 0.35277778; // default millimeters per pixel
-
-    // Customize the label. You can provide your own string that describes who
-    // signed the document.  The "{0}" will be replaced by the name of the
-    // signer, which is set in the name property of UserInfo.
-    //
-    // Also, demonstrate characters outside of WinAnsiEncoding, and subsetted fonts:
-    // Acrobat and PDFJT store the embeddable font into the AcroForm
-    // dictionary, and a subset of that font will be created for the signature.
-    //
-    // See the use of this constant in setSignatureLabel() below.
-    private static final String SIGNATURE_LABEL = "\u27a1 {0} signed this document";  // U+27A1 BLACK RIGHTWARDS ARROW
-
-    // The name of the person signing the document. This will be passed to the UserInfo object.
-    public static final String SIGNER_NAME = "John Doe";
 
     /**
      * This is a utility class, and won't be instantiated.
@@ -140,12 +141,35 @@ public final class SignDocument {
             // Set up a signature service and iterate over all of the
             // signature fields.
             final SignatureManager sigService = SignatureManager.newInstance(pdfDoc);
+
             if (sigService.hasUnsignedSignatureFields()) {
-                final Iterator<SignatureFieldInterface> iter = sigService.getDocSignatureFieldIterator();
+                final Iterator<SignatureFieldInterface> iter =
+                    sigService.getDocSignatureFieldIterator();
                 while (iter.hasNext()) {
                     final SignatureFieldInterface sigField = iter.next();
                     signField(sigService, sigField, fontSet, outputUrl);
                 }
+            } else {
+
+                final PDFRectangle pdfRectangle = PDFRectangle.newInstance(pdfDoc, 1 * inches, 7.5 * inches,
+                                                                           4 * inches, 8 * inches);
+
+                final PDFPage firstPage = pdfDoc.requireCatalog().getPages().getPage(0);
+
+                // brak pola do podpisu muszę stworzyć własne
+                // Create an unsigned signature field.
+                //
+                // page – PDFPage object that we want to put the signatures appearance on
+                // annotRect – the rectangular space that the signatures appearance should take up
+                // iform – the parent object of the signature, in this case an interactive form
+
+                final SignatureFieldInterface sigField = SignatureFieldFactory.createSignatureField(firstPage,
+                                                                                                    pdfRectangle,
+                                                                                                    "Podpis");
+
+                sigService.unsignSignatureField(sigField);
+
+                signField(sigService, sigField, fontSet, outputUrl);
             }
         } finally {
             try {
@@ -181,28 +205,62 @@ public final class SignDocument {
                     final SignatureAppearanceOptions appearanceOptions = SignatureAppearanceOptions.newInstance();
                     final SignatureAppearanceDisplayItemsSet displayItems = createSignatureAppearanceDisplayItemsSet();
 
+
                     appearanceOptions.setFontSet(fontSet);
                     appearanceOptions.setDisplayItems(displayItems);
-
-                    // Customize the label. See the declaration of the constant for more info.
-                    appearanceOptions.setSignatureLabel(SIGNATURE_LABEL);
-
                     signatureOptions.setSignatureAppearanceOptions(appearanceOptions);
 
                     final UserInfo userInfo = UserInfo.newInstance();
 
                     final URL signatureImageUrl = SignDocument.class.getResource(INPUT_SIGNATURE_IMAGE_PATH);
                     final PDFPage signaturePage = createSignaturePage(signatureImageUrl);
-                    appearanceOptions.setGraphicImage(signaturePage);
+                    // appearanceOptions.setGraphicImage(signaturePage);
 
                     // This name will show up in the signature as "Digitally signed by <name>".
                     // If no name is specified the signature will say it was signed by whatever name is
                     // on the credentials used to sign the document.
-                    userInfo.setName(SIGNER_NAME);
+                    userInfo.setName("Piotr śćłóąę znaki");
+                    // userInfo.setLocation("Tu jest location");
+                    // userInfo.setReason("Tu jest Reason");
                     signatureOptions.setUserInfo(userInfo);
 
+
+                    appearanceOptions.setSignatureLabel("Podpisany przez: {0}, dla Jan Kowalski jak długi może być napis zaraz sprawdzimy ten jest już dość długi \u0105 wstawiony");
+
+                    final PDFSaveFullOptions saveOptions = PDFSaveFullOptions.newInstance();
+                    saveOptions.setVersion(PDFVersion
+                               .v2_0);
+                    // .v1_7_e5);
+
                     // Sign the document.
-                    sigMgr.sign(sigField, signatureOptions, credentials, byteWriter);
+                    // sigMgr.sign(sigField, signatureOptions, credentials, byteWriter);
+                    final SignatureOptionsDocumentTimeStamp sigOptions = SignatureOptionsDocumentTimeStamp.newInstance();
+                    sigOptions.setSaveOptions(saveOptions);
+
+                    final CryptoContext cryptoContext = new CryptoContext(CryptoMode.NON_FIPS_MODE, "SHA-1",
+                                                                          "TSPAlgorithms.SHA1");
+
+                    final TimeStampProvider tsProvider = new MyTimeStampProvider();
+                    tsProvider.setTSAURL("http://time.certum.pl/");
+                    // tsProvider.setTSAURL("http://timestamp.comodoca.com/authenticode");
+                    final String a = tsProvider.getTSAURL();
+
+                    // tsProvider.setDigestAlgorithm("SHA-1");
+
+                    // sigOptions.registerTimeStampProvider(tsProvider);
+
+                    cryptoContext.registerTimeStampProvider(tsProvider);
+
+                    final SignatureServiceProvider defaultCryptoProvider = new CertJNonFIPSProvider(cryptoContext);
+
+                    signatureOptions.setUserInfo(userInfo);
+
+
+                    // Sign the document - bez znacznika czasu
+                    // sigMgr.sign(sigField, signatureOptions, credentials, byteWriter);
+                    // ze znacznikiem czasu
+                    sigMgr.applyDocumentTimeStampSignature(sigOptions, defaultCryptoProvider, byteWriter);
+                    // sigMgr.sign(sigField, sigOptions, credentials, byteWriter);
                 } else {
                     throw new PDFIOException("Signature field is not visible");
                 }
@@ -219,7 +277,8 @@ public final class SignDocument {
         // These are sample files whose authenticity won't be able to be verified by Acrobat. When opening a document
         // signed with this certificate, Acrobat will display a warning. This does not indicate any error in the
         // document itself aside from the unverifiable signature.
-        final String sigAlgorithm = "RSA";
+        //final String sigAlgorithm = "RSA";
+        final String sigAlgorithm = null;
         final InputStream certStream = SignDocument.class.getResourceAsStream(DER_CERT_PATH);
         final InputStream keyStream = SignDocument.class.getResourceAsStream(DER_KEY_PATH);
 
@@ -231,15 +290,18 @@ public final class SignDocument {
                                                              final InputStream keyStream,
                                                              final String sigAlgorithm)
                                                                              throws Exception {
-        final byte[] derEncodedPrivateKey = getDerEncodedData(keyStream);
-        final byte[] derEncodedCert = getDerEncodedData(certStream);
-        final PrivateKeyHolder privateKeyHolder = PrivateKeyHolderFactory
-                                                                         .newInstance()
-                                                                         .createPrivateKey(derEncodedPrivateKey,
-                                                                                           sigAlgorithm);
-        final Credentials credentials = CredentialFactory.newInstance()
-                                                         .createCredentials(privateKeyHolder, derEncodedCert,
-                                                                            null);
+        //final byte[] derEncodedPrivateKey = getDerEncodedData(keyStream);
+        //final byte[] derEncodedCert = getDerEncodedData(certStream);
+        //final PrivateKeyHolder privateKeyHolder = PrivateKeyHolderFactory
+        //                                                                 .newInstance()
+        //                                                                 .createPrivateKey(derEncodedPrivateKey,
+        //                                                                                   sigAlgorithm);
+        //final Credentials credentials = CredentialFactory.newInstance()
+        //                                                 .createCredentials(privateKeyHolder, derEncodedCert,
+        //                                                                    null);
+        final char[] pasw = "pasw".toCharArray();
+
+        final Credentials credentials = SampleCredentialGenerator.CredentialsFromPFX(DER_KEY_PATH, pasw);
         return credentials;
     }
 
