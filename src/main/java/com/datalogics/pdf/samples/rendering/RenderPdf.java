@@ -142,8 +142,8 @@ public final class RenderPdf {
      */
     private static void savePage(final URL imageBaseUrl, final int pageNo, final BufferedImage page)
                     throws IOException, URISyntaxException {
-        final File outputFile = new File(imageBaseUrl.toURI().getPath() + "." + pageNo + ".png");
+        final File outputFile = new File(imageBaseUrl.toURI().getPath() + "." + pageNo + ".jpg");
         // Saving raster image
-        ImageIO.write(page, "png", outputFile);
+        ImageIO.write(page, "jpg", outputFile);
     }
 }
